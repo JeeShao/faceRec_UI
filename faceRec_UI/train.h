@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include <Windows.h>
+//#include <Windows.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/face/facerec.hpp>
 #include <io.h>
@@ -8,6 +8,7 @@
 #include <direct.h>
 #include "csv.h"
 #include "config.h"
+#include "video.h"
 
 
 
