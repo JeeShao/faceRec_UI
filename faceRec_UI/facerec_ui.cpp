@@ -1,13 +1,14 @@
 #pragma once
+#include <sstream>
 #include "facerec_ui.h"
 #include "common.h"
+
 
 faceRec_UI* faceRec_UI::facerec_ui;
 faceRec_UI::faceRec_UI(QWidget *parent)
 	: QMainWindow(parent)
 {
-	/*setMinimumSize(200, 120);
-	setMaximumSize(1366, 768);*/
+	//this->setAttribute(Qt::WA_DeleteOnClose, true);
 	timer = new QTimer(this);
 	facerec_ui = this;
 	path = "";
@@ -72,14 +73,22 @@ void faceRec_UI::setupUi(QMainWindow *MainWindow)
 	recognize_button->setFont(font2);
 	exit_button->setFont(font2);
 
+	QFont font3;
+	font3.setFamily(QString::fromUtf8("\346\245\267\344\275\223"));
+	font3.setPointSize(15);
 	progressBar = new QProgressBar(centralwidget);
 	progressBar->setObjectName(QStringLiteral("progressBar"));
 	progressBar->setGeometry(QRect(30, 400, 410, 31));
 	progressBar->setValue(0);
-	progressBar->setFont(font2);
+	progressBar->setFont(font3);
 	progressBar->setRange(0, 30);
 	progressBar->setVisible(false);
 
+	labelRes = new QLabel(centralwidget);
+	labelRes->setObjectName(QStringLiteral("labelRes"));
+	labelRes->setGeometry(QRect(30, 400, 411, 30));
+	labelRes->setFont(font3);
+	labelRes->setVisible(false);
 
 	//inputDialog = new InputDialog(); //输入用户名窗口
 	inputDialog.setWindowModality(Qt::ApplicationModal);//阻塞父窗口
@@ -93,8 +102,8 @@ void faceRec_UI::setupUi(QMainWindow *MainWindow)
 
 	retranslateUi(MainWindow);
 	QObject::connect(train_button, SIGNAL(clicked()), this, SLOT(train()));
-	QObject::connect(recognize_button, SIGNAL(clicked()), this, SLOT(recognize()));
-	QObject::connect(exit_button, SIGNAL(clicked()), MainWindow, SLOT(close()));
+	QObject::connect(recognize_button, SIGNAL(clicked()), this, SLOT(recognizer()));
+	//QObject::connect(exit_button, SIGNAL(clicked()), MainWindow, SLOT(close()));
 	 
 	QMetaObject::connectSlotsByName(MainWindow);
 }
@@ -182,7 +191,6 @@ void faceRec_UI::trainfaces()
 	frame->setText(QStringLiteral("<font color=green>正在录入人脸…………莫作急！</font>"));
 	trainPro->start();//训练
 	connect(trainPro, SIGNAL(finished()), this, SLOT(trainOver()));
-
 }
 
 void faceRec_UI::trainOver()
@@ -204,20 +212,32 @@ void faceRec_UI::trainOver()
 	bool r = msgBox.exec();
 	progressBar->setValue(0);
 	progressBar->setVisible(false);
+	train_button->setEnabled(true);
+	recognize_button->setEnabled(true);
+	//this->setupUi;
 }
 
 void  faceRec_UI::reciveUserName(QString name)
 {
 	string userName;
 	name = name.trimmed();
-	userName = name.toStdString();
-	facerec_ui->path = FACES_PIC_DIR + string("\\") + userName;
-	judgefile(facerec_ui->path);
-	//QString path = QDir::currentPath();
-	facerec_ui->inputDialog.close();
-	facerec_ui->progressBar->setVisible(true);
-	facerec_ui->facedetece = new faceDetect();
-	facerec_ui->startCollect();
+	if (name.isEmpty())
+	{
+		facerec_ui->inputDialog.seterrMsg(QStringLiteral("<font color=red>用户名不能为空!</font>"));
+	}
+	else
+	{
+		facerec_ui->train_button->setEnabled(false);
+		facerec_ui->recognize_button->setEnabled(false);
+		userName = name.toStdString();
+		facerec_ui->path = FACES_PIC_DIR + string("\\") + userName;
+		judgefile(facerec_ui->path);
+		//QString path = QDir::currentPath();
+		facerec_ui->inputDialog.close();
+		facerec_ui->progressBar->setVisible(true);
+		facerec_ui->facedetece = new faceDetect();
+		facerec_ui->startCollect();
+	}
 }
 
 void faceRec_UI::startCollect()
@@ -236,33 +256,77 @@ void faceRec_UI::startCollect()
 ————————人脸识别模块————————
 ********************************************/
 
-void faceRec_UI::recognize()
+void faceRec_UI::recognizer()
 {
+	recTimes = 0;
+	captureFlag = FACE_NUM;
+	Mat cvImage;
+	facedetece = new faceDetect();
+	_timer->start();
+	labelRes->setVisible(true);
+	train_button->setEnabled(false);
+	recognize_button->setEnabled(false);
 
+	connect(facedetece, SIGNAL(finished()), this, SLOT(reciveRecongnizeRes()));
+	cvImage = video.getGrayCVImage();
+	facedetece->setImage(cvImage);
+	recognize = new Recognize();
+	recognize->getNames();//获取csv中用户名信息
+	recognize->names;
+	facedetece->start();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void faceRec_UI::reciveRecongnizeRes()
+{
+	//Mat cvImage;
+	Mat cvImage;
+	Mat facepic;
+	if (recognize->times >= 20 || recTimes >= 50) {
+		QMessageBox msgBox;
+		QFont font;
+		labelRes->setVisible(false);
+		font.setFamily(QString::fromUtf8("\346\245\267\344\275\223"));
+		font.setPointSize(15);
+		msgBox.setFont(font);
+		if (recognize->times >= 20)
+		{
+			int resLabel = getResLabel(recognize->recRse);
+			string resUser = recognize->names[resLabel];
+			msgBox.setWindowTitle("success");
+			msgBox.setText(QStringLiteral("识别结果：") + QString::fromStdString(resUser));
+		}
+		else
+		{
+			msgBox.setWindowTitle("failed");
+			msgBox.setText(QStringLiteral("无法识别当前人脸！"));
+		}
+		//msgBox.about(NULL, "About", QStringLiteral("人脸录入成功!"));
+		if (msgBox.exec()) {
+			train_button->setEnabled(true);
+			recognize_button->setEnabled(true);
+			frame->setRect(0, 0, 0, 0);
+			frame->clear();
+			_timer->stop();
+			video.capture.release();
+		}
+	}
+	else
+	{
+		facepic = facedetece->getFace();
+		if (!facepic.empty()) {
+			recognize->startRec(facepic);
+			recTimes++;
+			ostringstream os;
+			os << recognize->confidence;
+			string info = "<font color=blue>name: </font>" + recognize->names[recognize->predictedLabel]
+				+"<font color=blue>   confidence: </font>" +format("%4s",os.str());
+			labelRes->setText(QString::fromStdString(info));
+		}
+		cvImage = video.getGrayCVImage();
+		facedetece->setImage(cvImage);
+		facedetece->start();
+	}
+}
 
 
 
@@ -284,8 +348,11 @@ void InputDialog::setupUi(QWidget *Qwidget)
 	labelInfo = new QLabel(Qwidget);
 	labelInfo->setFont(*font);
 
+	font1 = new QFont();
+	font1->setPointSize(10);
 	msgInfo = new QLabel(Qwidget);
-	msgInfo->setFont(*font);
+	msgInfo->setFont(*font1);
+	msgInfo->clear();
 
 	editUserName = new QLineEdit(Qwidget);
 	editUserName->setFont(*font);

@@ -58,3 +58,21 @@ bool judgefile(string dirname_str) {
 	//	cout << "\n" << dirname << "目录已覆盖!" << endl;
 	//}
 }
+
+
+int getResLabel(int (&recRse)[200])
+{
+	int num = sizeof(recRse);
+	int max_num = 0; //记录最大值和最小值的下标，初始值是0
+	for (int i = 0; i < sizeof(recRse) / sizeof(recRse[0]); i++)
+	{
+		if (recRse[i] >= 10)
+		{
+			max_num = i;
+			break;
+		}
+		if (recRse[i] > recRse[max_num]) //当前的数比最大值大
+			max_num = i;
+	}
+	return max_num;
+}

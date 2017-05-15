@@ -9,6 +9,7 @@
 #define RECOGNIZE_FISHER face::createFisherFaceRecognizer()
 #define RECOGNIZE_LBPH   face::createLBPHFaceRecognizer()
 #define RECOGNIZE		 RECOGNIZE_LBPH
+#define THRESHOLD        70
 //»À¡≥∑÷±Ê¬ 
 #define FACE_WIDTH 92
 #define FACE_HEIGHT 112

@@ -86,6 +86,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="recognize.cpp" />
+    <ClCompile Include="train.cpp" />
     <ClCompile Include="video.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -118,7 +120,7 @@
     <ClInclude Include="face.h" />
     <ClInclude Include="faceDetect.h" />
     <ClInclude Include="GeneratedFiles\ui_facerec_ui.h" />
-    <ClInclude Include="recognize.h" />
+    <ClInclude Include="train.h" />
     <ClInclude Include="video.h" />
   </ItemGroup>
   <ItemGroup>

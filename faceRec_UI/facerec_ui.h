@@ -20,6 +20,7 @@
 #include "video.h"
 #include "faceDetect.h"
 #include "train.h"
+#include "recognize.h"
 
 /*******************************************
 —————摄像头框绘制矩形类————————
@@ -30,6 +31,7 @@ class InputDialog :public QWidget
 
 public:
 	QFont *font;
+	QFont *font1;
 	QLabel *labelInfo;
 	QLabel *msgInfo;
 	QLineEdit *editUserName;
@@ -69,6 +71,7 @@ public:
 	Mylabel *frame;
 	QLabel *label_author;
 	QLabel *label_date;
+	QLabel *labelRes;
 	QPushButton *train_button;
 	QPushButton *recognize_button;
 	QPushButton *exit_button;
@@ -77,9 +80,11 @@ public:
 	QTimer *timer;
 	QTimer *_timer;
 	string path;
+	int recTimes;// 识别检测次数
 	int captureFlag;//人脸采集数 控制ProsserBar
 	Video video;
 	Train *trainPro;
+	Recognize *recognize;
 	InputDialog inputDialog;
 	faceDetect *facedetece;
 	static faceRec_UI* facerec_ui;
@@ -95,11 +100,11 @@ private:
 	void trainfaces();
 public slots:
 	void train();
-	//void nextFrame();
 	void reciveRes();
 	void playVideo();
 	void trainOver();
-	void recognize();
+	void recognizer();
+	void reciveRecongnizeRes();
 };
 
 
