@@ -1,21 +1,7 @@
 #pragma once
-//#include <QtCore/QVariant>
-//#include <QtWidgets/QAction>
-//#include <QtWidgets/QApplication>
-//#include <QtWidgets/QButtonGroup>
-//#include <QtWidgets/QFrame>
-//#include <QtWidgets/QHeaderView>
-//#include <QtWidgets/QLabel>
-//#include <QtWidgets/QMainWindow>
-//#include <QtWidgets/QMenuBar>
-//#include <QtWidgets/QProgressBar>
-//#include <QtWidgets/QPushButton>
-//#include <QtWidgets/QWidget>
-
 #include "facerec_ui.h"
 #include "common.h"
 
-//#include "train.h"
 faceRec_UI* faceRec_UI::facerec_ui;
 faceRec_UI::faceRec_UI(QWidget *parent)
 	: QMainWindow(parent)
@@ -25,13 +11,11 @@ faceRec_UI::faceRec_UI(QWidget *parent)
 	timer = new QTimer(this);
 	facerec_ui = this;
 	path = "";
-	//i = 1;
-	captureFlag = 30;
+	captureFlag = FACE_NUM;
 	setupUi(this);
 	_timer = new QTimer(this);
-	facedetece = new faceDetect();
 	connect(_timer, SIGNAL(timeout()), this, SLOT(playVideo()));
-	_timer->start();
+	//_timer->start();
 	this->update();
 
 }
@@ -109,7 +93,7 @@ void faceRec_UI::setupUi(QMainWindow *MainWindow)
 
 	retranslateUi(MainWindow);
 	QObject::connect(train_button, SIGNAL(clicked()), this, SLOT(train()));
-	QObject::connect(recognize_button, SIGNAL(clicked()), progressBar, SLOT(hide()));
+	QObject::connect(recognize_button, SIGNAL(clicked()), this, SLOT(recognize()));
 	QObject::connect(exit_button, SIGNAL(clicked()), MainWindow, SLOT(close()));
 	 
 	QMetaObject::connectSlotsByName(MainWindow);
@@ -126,45 +110,16 @@ void faceRec_UI::retranslateUi(QMainWindow *MainWindow)
 	exit_button->setText(QApplication::translate("MainWindow", "\351\200\200\345\207\272\347\263\273\347\273\237", Q_NULLPTR));
 }
 
-void faceRec_UI::train()
-{
-	inputDialog.setInfo(QStringLiteral("请输入用户名"));
-	inputDialog.clear();
-	inputDialog.show();
-}
-
-//void QLabel::paintEvent(QPaintEvent *event)
-//{
-//	QLabel::paintEvent(event);
-//	QPainter painter(this);
-//	painter.setPen(QPen(Qt::blue, 4, Qt::DashLine));
-//	painter.drawRect(0, 0, 10, 10);
-//}
-
 void faceRec_UI::playVideo()
 {
 	QImage Qimage;
 	Mat cvImage;
-	int x=0, y=0, w=0, h=0;
-
-	//Qimage = video.getQImageFrame();
-
-	/*cvImage = video.getCVImage();
-	facedetece->setImage(cvImage);
-	facedetece->markFace();
-	cvImage = video.getCVImage();
-	Qimage = video.Mat2QImage(cvImage);
-	frame->setPixmap(QPixmap::fromImage(Qimage));*/
+	int x = 0, y = 0, w = 0, h = 0;
 	if (facedetece->face.area() != 0 && captureFlag>0)
 	{
-		//	//frame->p;
-		//	//paintEvent(frame);
-		//	//paintEvent = new QPaintEvent(this);
-		//	//paint = new QPainter(paintEvent);
-		//	//paint->setPen(QPen(Qt::blue, 4, Qt::DashLine));
 		//640x480像素转换到Qt中frame399x311
 		frame->setRect(facedetece->face.x*0.6, facedetece->face.y*0.6,
-		facedetece->face.width*0.6, facedetece->face.height*0.68);
+			facedetece->face.width*0.6, facedetece->face.height*0.68);
 	}
 	else
 	{
@@ -172,6 +127,18 @@ void faceRec_UI::playVideo()
 	}
 	frame->setPixmap(QPixmap::fromImage(video.getQImageFrame()));
 
+}
+
+
+
+/*******************************************
+————————人脸录入模块————————
+********************************************/
+void faceRec_UI::train()
+{
+	inputDialog.setInfo(QStringLiteral("请输入用户名"));
+	inputDialog.clear();
+	inputDialog.show();
 }
 
 void faceRec_UI::reciveRes()
@@ -184,7 +151,7 @@ void faceRec_UI::reciveRes()
 		string filename = path + format("/%d.jpg", captureFlag);
 		write = imwrite(filename, facepic);
 		--captureFlag;
-		progressBar->setValue(30 - captureFlag);
+		progressBar->setValue(FACE_NUM - captureFlag);
 	}
 	cvImage = video.getGrayCVImage();
 	facedetece->setImage(cvImage);
@@ -193,30 +160,50 @@ void faceRec_UI::reciveRes()
 	}
 	else     //人脸采集结束
 	{
-		_timer->stop();//关闭视频流
-		video.capture.release();
-		frame->setRect(0, 0, 0, 0);//清空矩形
-		frame->clear();//清空图像
+		facedetece->terminate();
+		facedetece->wait();
+		trainfaces();
 	}
 }
 
-void faceRec_UI::nextFrame()
+void faceRec_UI::trainfaces()
 {
-	facedetece->start();
-	//facedetece.finished.connect(reciveRes());
-	connect(facedetece, SIGNAL(faceDetect()), this, SLOT(reciveRes()));
-	QImage Qimage;
-	Mat cvImage,face;
-	cvImage = video.getCVImage();
-	//face = getFace(cvImage);
-	facedetece->setImage(cvImage);
-	//cvImage = facedetece.markFace();
-	/*face = facedetece.getImage();
-	if (!face.empty()) {
-		cvImage = face;
-	}
-	Qimage = video.Mat2QImage(cvImage);
-	frame->setPixmap(QPixmap::fromImage(Qimage));*/
+	trainPro = new Train();
+	_timer->stop();//关闭视频流
+	video.capture.release();
+	frame->setRect(0, 0, 0, 0);//清空矩形
+	frame->clear();//清空图像
+	QFont font;
+	font.setFamily(QString::fromUtf8("\346\245\267\344\275\223"));
+	font.setPointSize(20);
+	font.setBold(true);
+	//font.setWeight(75);
+	frame->setFont(font);
+	frame->setText(QStringLiteral("<font color=green>正在录入人脸…………莫作急！</font>"));
+	trainPro->start();//训练
+	connect(trainPro, SIGNAL(finished()), this, SLOT(trainOver()));
+
+}
+
+void faceRec_UI::trainOver()
+{
+	trainPro->terminate();
+	trainPro->wait();
+	frame->clear();
+	//QMessageBox::about(NULL, "About", "About this <font color='red'>application</font>");
+	QMessageBox msgBox;
+	QFont font;
+	font.setFamily(QString::fromUtf8("\346\245\267\344\275\223"));
+	font.setPointSize(15);
+	//font.setBold(true);
+	//font.setWeight(75);
+	msgBox.setFont(font);
+	msgBox.setWindowTitle("About");
+	msgBox.setText(QStringLiteral("人脸录入成功!"));
+	//msgBox.about(NULL, "About", QStringLiteral("人脸录入成功!"));
+	bool r = msgBox.exec();
+	progressBar->setValue(0);
+	progressBar->setVisible(false);
 }
 
 void  faceRec_UI::reciveUserName(QString name)
@@ -229,12 +216,15 @@ void  faceRec_UI::reciveUserName(QString name)
 	//QString path = QDir::currentPath();
 	facerec_ui->inputDialog.close();
 	facerec_ui->progressBar->setVisible(true);
+	facerec_ui->facedetece = new faceDetect();
 	facerec_ui->startCollect();
 }
 
 void faceRec_UI::startCollect()
 {
 	Mat cvImage;
+	captureFlag = FACE_NUM;
+	_timer->start();
 	connect(facedetece, SIGNAL(finished()), this, SLOT(reciveRes()));
 	cvImage = video.getGrayCVImage();
 	facedetece->setImage(cvImage);
@@ -242,7 +232,43 @@ void faceRec_UI::startCollect()
 }
 
 
+/*******************************************
+————————人脸识别模块————————
+********************************************/
 
+void faceRec_UI::recognize()
+{
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*******************************************
+———————用户名输入框模块———————
+********************************************/
 InputDialog::InputDialog(/*const char* callbackName,*/QWidget *parent)
 	: QWidget(parent)
 {
@@ -278,6 +304,7 @@ void InputDialog::setupUi(QWidget *Qwidget)
 	this->setLayout(gl);
 	//window->show();
 }
+
 void InputDialog::setInfo(QString info)
 {
 	labelInfo->setText(info);
@@ -304,6 +331,9 @@ void InputDialog::reciveUserName()
 }
 
 
+/*******************************************
+——————摄像头框绘制矩形模块——————
+********************************************/
 Mylabel::Mylabel(QWidget *parent) :
 	QLabel(parent)
 {
@@ -330,6 +360,5 @@ void Mylabel::paintEvent(QPaintEvent *event)
 	pen.setWidth(3);
 	painter.setPen(pen);
 	painter.drawRect(x1, y1, x2, y2);
-	
 }
 

@@ -11,6 +11,7 @@
 #include <QtWidgets/QProgressBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QWidget>
+#include <QtWidgets/QMessageBox>
 #include <QtCore/QTimer>
 #include <QVBoxLayout>  
 #include <QLineEdit> 
@@ -18,7 +19,11 @@
 #include <QPaintEvent>
 #include "video.h"
 #include "faceDetect.h"
+#include "train.h"
 
+/*******************************************
+—————摄像头框绘制矩形类————————
+********************************************/
 class InputDialog :public QWidget
 {
 	Q_OBJECT
@@ -30,9 +35,8 @@ public:
 	QLineEdit *editUserName;
 	QPushButton *pushButton_accept;
 	QVBoxLayout *gl;
-	//const char* callBack;
 public:
-	InputDialog(/*const char* callbackName,*/QWidget *parent = Q_NULLPTR);
+	InputDialog(QWidget *parent = Q_NULLPTR);
 	void setupUi(QWidget *Qwidget);
 	void setInfo(QString info);
 	void seterrMsg(QString info);
@@ -51,6 +55,11 @@ private:
 	int x1, y1, x2, y2;
 };
 
+
+
+/*******************************************
+—————————主窗体类—————————
+********************************************/
 class faceRec_UI : public QMainWindow
 {
 	Q_OBJECT
@@ -68,13 +77,12 @@ public:
 	QTimer *timer;
 	QTimer *_timer;
 	string path;
-	//int i;//保存人脸图片文件序号
 	int captureFlag;//人脸采集数 控制ProsserBar
 	Video video;
+	Train *trainPro;
 	InputDialog inputDialog;
 	faceDetect *facedetece;
 	static faceRec_UI* facerec_ui;
-
 
 public:
 	faceRec_UI(QWidget *parent = Q_NULLPTR);
@@ -83,16 +91,15 @@ public:
 	void startCollect();
 	static void reciveUserName(QString name);
 	//void paintEvent(QPaintEvent *);
-
-
-
+private:
+	void trainfaces();
 public slots:
 	void train();
-	void nextFrame();
+	//void nextFrame();
 	void reciveRes();
 	void playVideo();
-
-
+	void trainOver();
+	void recognize();
 };
 
 
