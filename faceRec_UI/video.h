@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include <QtWidgets/QMainWindow>
 using namespace cv;
+
 class Video
 {
 public:
@@ -17,7 +18,9 @@ public:
 	void captureNextFrame();
 	QImage getQImageFrame();
 	Mat getGrayCVImage();
-	QImage Mat2QImage(cv::Mat cvImg);
+	QImage Mat2QImage(Mat cvImg);
+	QImage mat2QImage(Mat mat);
+
 
 private:
 	Mat read();

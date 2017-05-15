@@ -1,10 +1,12 @@
 #pragma once
 #include <sstream>
+//#include <time.h>
 #include "facerec_ui.h"
 #include "common.h"
 
 
-faceRec_UI* faceRec_UI::facerec_ui;
+faceRec_UI* faceRec_UI::facerec_ui; //用于静态函数调用非静态成员
+
 faceRec_UI::faceRec_UI(QWidget *parent)
 	: QMainWindow(parent)
 {
@@ -15,7 +17,14 @@ faceRec_UI::faceRec_UI(QWidget *parent)
 	captureFlag = FACE_NUM;
 	setupUi(this);
 	_timer = new QTimer(this);
+	date_timer = new QTimer(this);
+	//QPalette palette;
+	//palette.setBrush(QPalette::Background, QBrush(Qt::red));
+	//parent->setPalette(palette);
+	//parentsetAutoFillbackground(true);
 	connect(_timer, SIGNAL(timeout()), this, SLOT(playVideo()));
+	connect(date_timer, SIGNAL(timeout()), this, SLOT(updatetime()));
+	date_timer->start(1000);
 	//_timer->start();
 	this->update();
 
@@ -42,6 +51,7 @@ void faceRec_UI::setupUi(QMainWindow *MainWindow)
 	frame->setGeometry(QRect(30, 80, 391, 311));
 	frame->setLayoutDirection(Qt::LeftToRight);
 	frame->setScaledContents(true); //图片自适应窗口大小
+	getHomePic();
 
 	label_author = new QLabel(centralwidget);
 	label_author->setObjectName(QStringLiteral("label_author"));
@@ -108,12 +118,22 @@ void faceRec_UI::setupUi(QMainWindow *MainWindow)
 	QMetaObject::connectSlotsByName(MainWindow);
 }
 
+void faceRec_UI::getHomePic()
+{
+	QImage qimage;
+	srand(time(NULL));
+	int i = rand()%8+1;
+	Mat image = imread(format(".\\homePic\\%d.jpg",i));
+	QImage Qimage = video.mat2QImage(image);
+	frame->setPixmap(QPixmap::fromImage(Qimage));
+}
+
 void faceRec_UI::retranslateUi(QMainWindow *MainWindow)
 {
-	MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", Q_NULLPTR));
+	MainWindow->setWindowTitle(QApplication::translate("BiuBiuBiu", "BiuBiuBiu", Q_NULLPTR));
 	label_title->setText(QApplication::translate("MainWindow", "\344\272\272\350\204\270\350\257\206\345\210\253\347\263\273\347\273\237", Q_NULLPTR));
-	label_author->setText(QApplication::translate("MainWindow", "\344\275\234\350\200\205\357\274\232\351\273\204\346\270\235\346\235\260", Q_NULLPTR));
-	label_date->setText(QApplication::translate("MainWindow", "2017-05-10", Q_NULLPTR));
+	label_author->setText(QStringLiteral("作者: 黄渝杰"));
+	//label_date->setText(QApplication::translate("MainWindow", "2017-05-10", Q_NULLPTR));
 	train_button->setText(QApplication::translate("MainWindow", "\344\272\272\350\204\270\345\275\225\345\205\245", Q_NULLPTR));
 	recognize_button->setText(QApplication::translate("MainWindow", "\344\272\272\350\204\270\350\257\206\345\210\253", Q_NULLPTR));
 	exit_button->setText(QApplication::translate("MainWindow", "\351\200\200\345\207\272\347\263\273\347\273\237", Q_NULLPTR));
@@ -138,7 +158,14 @@ void faceRec_UI::playVideo()
 
 }
 
-
+void faceRec_UI::updatetime()
+{
+	time_t timer;
+	time(&timer);
+	tm* t_tm = localtime(&timer);
+	label_date->setText(QString::number(long(t_tm->tm_year + 1900),10) + "-"
+		+ QString::number((t_tm->tm_mon + 1),10)+"-"+ QString::number(t_tm->tm_mday,10));
+}
 
 /*******************************************
 ————————人脸录入模块————————
@@ -198,6 +225,7 @@ void faceRec_UI::trainOver()
 	trainPro->terminate();
 	trainPro->wait();
 	frame->clear();
+	getHomePic(); //123
 	//QMessageBox::about(NULL, "About", "About this <font color='red'>application</font>");
 	QMessageBox msgBox;
 	QFont font;
@@ -243,6 +271,7 @@ void  faceRec_UI::reciveUserName(QString name)
 void faceRec_UI::startCollect()
 {
 	Mat cvImage;
+	frame->clear();//123
 	captureFlag = FACE_NUM;
 	_timer->start();
 	connect(facedetece, SIGNAL(finished()), this, SLOT(reciveRes()));
@@ -273,6 +302,7 @@ void faceRec_UI::recognizer()
 	recognize = new Recognize();
 	recognize->getNames();//获取csv中用户名信息
 	recognize->names;
+	frame->clear();//123
 	facedetece->start();
 }
 
@@ -306,6 +336,7 @@ void faceRec_UI::reciveRecongnizeRes()
 			recognize_button->setEnabled(true);
 			frame->setRect(0, 0, 0, 0);
 			frame->clear();
+			getHomePic();
 			_timer->stop();
 			video.capture.release();
 		}

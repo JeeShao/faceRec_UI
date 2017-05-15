@@ -79,6 +79,7 @@ public:
 	QMenuBar *menubar;
 	QTimer *timer;
 	QTimer *_timer;
+	QTimer *date_timer;
 	string path;
 	int recTimes;// 识别检测次数
 	int captureFlag;//人脸采集数 控制ProsserBar
@@ -94,6 +95,7 @@ public:
 	void setupUi(QMainWindow *MainWindow);
 	void retranslateUi(QMainWindow *MainWindow);
 	void startCollect();
+	void getHomePic();
 	static void reciveUserName(QString name);
 	//void paintEvent(QPaintEvent *);
 private:
@@ -105,6 +107,7 @@ public slots:
 	void trainOver();
 	void recognizer();
 	void reciveRecongnizeRes();
+	void updatetime();
 };
 
 
